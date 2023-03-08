@@ -40,3 +40,4 @@ pnpm dev
 ## Usage
 
 - visit http://localhost:3000/auth/google to login
+- visit http://localhost:3000/logout to logout

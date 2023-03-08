@@ -15,6 +15,7 @@ const REDIRECT_URI = "http://localhost:3000/auth/google/callback";
 
 const client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 
+// callback from google
 app.get("/auth/google/callback", async (req, res) => {
   const { code } = req.query;
 
@@ -23,14 +24,15 @@ app.get("/auth/google/callback", async (req, res) => {
 
     client.setCredentials(tokens);
 
+    // get user informations
     const { data } = await client.request({
       url: "https://www.googleapis.com/oauth2/v1/userinfo?alt=json",
       method: "GET",
     });
 
-    console.log("google data : ", data);
+    // console.log("google data : ", data);
 
-    // use JWT to create token and sent that token to client and store it in session or cookies
+    // use JWT to create token and store it in session or cookies
     const token = jwt.sign(
       {
         ...data,
@@ -45,8 +47,6 @@ app.get("/auth/google/callback", async (req, res) => {
       secure: process.env.NODE_ENV === "production",
     });
 
-    console.log("here");
-
     res.redirect("/");
   } catch (error) {
     console.error(error);
@@ -55,6 +55,7 @@ app.get("/auth/google/callback", async (req, res) => {
 });
 
 app.get("/auth/google", (req, res) => {
+  // Generate the url that will be used for the consent dialog.
   const authUrl = client.generateAuthUrl({
     access_type: "offline",
     scope: ["email", "profile"],
@@ -76,12 +77,12 @@ const jwtAuthMiddleware = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    // set request
+    // sent user data through request
     req.user = decoded;
     next();
   } catch (err) {
     console.error("Error verifying JWT token:", err);
-    return res.status(400).send(err);
+    return res.status(401).json({ message: "Unauthorized", err });
   }
 };
 
@@ -89,6 +90,15 @@ app.get("/", jwtAuthMiddleware, (req, res) => {
   // console.log(req.user);
 
   res.send("Hello World!");
+});
+
+app.get("/logout", (req, res) => {
+  // clear token in cookie to make user logout
+  res.clearCookie("token");
+  // redirects the request back to the referrer, "/" by default
+  res.redirect("back");
+  // avoid web request hanging
+  res.end();
 });
 
 app.listen(3000, () => console.log("Listening at port 3000"));
