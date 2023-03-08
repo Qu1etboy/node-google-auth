@@ -89,7 +89,7 @@ const jwtAuthMiddleware = (req, res, next) => {
 app.get("/", jwtAuthMiddleware, (req, res) => {
   // console.log(req.user);
 
-  res.send("Hello World!");
+  res.send(`Hello ${req.user.name}!`);
 });
 
 app.get("/logout", (req, res) => {
